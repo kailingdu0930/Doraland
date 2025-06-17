@@ -18,21 +18,17 @@ if "show_beach_l2" not in st.session_state:
 if "show_desert_l2" not in st.session_state:
     st.session_state.show_desert_l2 = False
 
+# Restart only if all levels completed
+if all(st.session_state.progress.values()):
+    st.success("🎉 Congratulations! You finished all adventures!")
+    if st.button("🔄 Restart Adventure"):
+        st.session_state.clear()
+        st.rerun()
+    st.stop()
+
+# Adventure choice menu
 st.markdown("### Choose your adventure mode:")
-
-available_choices = [""]
-if not st.session_state.progress["Beach_L1"]:
-    available_choices.append("Beach")
-elif not st.session_state.progress["Beach_L2"]:
-    available_choices.append("Beach")
-elif not st.session_state.progress["Desert_L1"]:
-    available_choices.append("Desert")
-elif not st.session_state.progress["Desert_L2"]:
-    available_choices.append("Desert")
-elif not st.session_state.progress["Forest"]:
-    available_choices.append("Forest")
-
-choice = st.selectbox("Where should Dora go?", available_choices)
+choice = st.radio("Where should Dora go?", ["Beach", "Desert", "Forest"])
 
 # -------------- Beach Adventure --------------
 if choice == "Beach":
@@ -50,14 +46,14 @@ if choice == "Beach":
         user_set = set(selected)
 
         if len(user_set) in [1, 2]:
-            st.warning("你只選了幾個答案，還有其他答案喔～")
+            st.warning("you only picked a few answer, there's more～")
         elif user_set:
             if user_set == correct_mocktail:
                 st.success("Diego: Thank you Dora! Here's your mocktail! 🍹")
                 st.balloons()
                 st.session_state.progress["Beach_L1"] = True
                 st.session_state.show_beach_l2 = True
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Oops! Mocktails shouldn't include alcohol. Try again!")
 
@@ -92,6 +88,7 @@ if choice == "Beach":
             question, correct, hint = questions[q_index]
             st.write(f"Q{q_index + 1}: {question}")
             answer = st.text_input("Your answer:", key=f"fish_{q_index}").strip().lower()
+
             if answer:
                 st.session_state.fish_data["attempts"] += 1
                 if answer == correct:
@@ -178,8 +175,7 @@ elif choice == "Forest":
 
     idx = st.session_state.forest_index
     if idx < len(sounds):
-        choices = ["pig", "bee", "cow", "cat", "rooster"]
-        answer = st.radio(f"What animal makes this sound '{sounds[idx]}'?", choices, key=f"forest_{idx}")
+        answer = st.radio(f"What animal makes the sound '{sounds[idx]}'?", animals, key=f"forest_{idx}")
         if st.button("Submit Answer", key=f"submit_{idx}"):
             if answer == animals[idx]:
                 st.success("Correct!")
@@ -193,7 +189,3 @@ elif choice == "Forest":
         st.success(f"🎉 Congratulation! You got {score}/{len(sounds)} correct!")
         st.balloons()
         st.session_state.progress["Forest"] = True
-
-# Restart button
-if st.session_state.progress["Beach_L2"] and st.session_state.progress["Desert_L2"] and st.session_state.progress["Forest"]:
-    st.button("🔄 Restart Adventure", on_click=lambda: st.session_state.clear())
