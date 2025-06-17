@@ -1,85 +1,136 @@
 import streamlit as st
 import random
 
-st.set_page_config(page_title="Catch Fish with Dora", page_icon="🐟", layout="centered")
+st.set_page_config(page_title="Dora Adventure", page_icon="🧭")
+st.title("🗺️ Welcome to Dora Land!")
 
-# Initialize session state
-if "beach_level" not in st.session_state:
-    st.session_state.beach_level = 1
-    st.session_state.target_fish = random.randint(1, 5)
-    st.session_state.caught_fish = 0
-    st.session_state.q_index = 0
-    st.session_state.attempts = 0
-    st.session_state.total_failures = 0
-    st.session_state.mocktail_offered = False
-    st.session_state.current_question = ""
-    st.session_state.current_hint = ""
+st.markdown("Characters: Dora, Diego, Boots, Map, Benny the Bull")
+choice = st.radio("Where should Dora go first?", ["Beach", "Desert", "Forest"])
 
-questions = [
-    ("Which month has twenty-eight days?", "every month", "A month with twenty-eight days doesn’t mean 'only' with twenty-eight days."),
-    ("Who drew the artwork, The Starry Night?", "van gogh", "A male Dutch artist."),
-    ("What is the biggest organ of the human body?", "skin", "It’s the outermost part of your body and protects everything inside."),
-    ("How many days are there in a year?", "365 days", "Ask the person beside you :)"),
-    ("Which of the princesses ate the poisoned apple?", "snow white", "A princess from Disney.")
-]
+# Session state to allow reset
+if 'finished' not in st.session_state:
+    st.session_state.finished = False
 
-# 🌊 Title and Dora image
-st.title("🐟 Level 2: Catching Fish with Dora!")
-st.image("dora.jpg", caption="Dora and Boots!", use_container_width=True)
+if choice == "Beach" and not st.session_state.finished:
+    st.header("🏖️ Beach Adventure")
 
-# 🎯 Target fish
-st.markdown(f"🎯 Dora is hungry and wants to catch **{st.session_state.target_fish}** fish!")
-st.markdown(f"✅ Fish caught: **{st.session_state.caught_fish}** / {st.session_state.target_fish}")
-st.divider()
+    # Level 1: Mocktail
+    st.subheader("🌊 Level 1: Help Diego Make a Mocktail")
+    st.markdown("Diego is struggling to avoid alcoholic ingredients. Help him!")
 
-# 🧠 Show question if game not over
-if st.session_state.q_index < len(questions):
-    q, correct, hint = questions[st.session_state.q_index]
-    st.session_state.current_question = q
-    st.session_state.current_hint = hint
+    ingredients = ["1. Sprite", "2. Lemon", "3. Ginger", "4. Beer", "5. Passion fruit", "6. Whisky", "7. Mint leaf", "8. Tequila"]
+    for i in ingredients:
+        st.write(i)
 
-    st.markdown(f"**Q{st.session_state.q_index + 1}:** {q}")
-    answer = st.text_input("Your answer (try your best!):").strip().lower()
-
-    if answer:
-        if answer == correct:
-            st.success("✅ Correct! You caught a fish!")
-            st.session_state.caught_fish += 1
-            st.session_state.q_index += 1
-            st.session_state.attempts = 0
-            st.session_state.mocktail_offered = False
+    selected = st.text_input("Choose the ingredients that should NOT be included (enter numbers comma-separated, no space)")
+    if selected:
+        user_set = set(selected.split(","))
+        correct = {"4", "6", "8"}
+        if user_set == correct:
+            st.success("Diego: Thank you! Here's your mocktail! 🍹")
         else:
-            st.session_state.attempts += 1
-            st.session_state.total_failures += 1
-            st.error("❌ Incorrect answer.")
+            st.error("Oops! Try again. Remember, mocktails shouldn't include alcohol.")
 
-            # Diego offers a mocktail if total failures > 2 and not yet offered
-            if st.session_state.total_failures > 2 and st.session_state.attempts == 2 and not st.session_state.mocktail_offered:
-                st.session_state.mocktail_offered = True
-                choice = st.radio("It looks like you are exhausted. Would you like to recharge with the mocktail?", ("Yes", "No"), key="mocktail_radio")
-                if choice == "Yes":
-                    st.info(f"🔋 Hint: {st.session_state.current_hint}")
+    # Level 2: Catching Fish
+    st.subheader("🐟 Level 2: Dora wants to catch some fish!")
+    if 'fish_level' not in st.session_state:
+        st.session_state.fish_level = {
+            'target': random.randint(1, 5),
+            'caught': 0,
+            'index': 0,
+            'attempt': 0,
+            'fail_count': 0
+        }
+
+    fish_q = [
+        ("Which month has twenty-eight days?", "every month", "A month with twenty-eight days doesn’t mean 'only' with twenty-eight days."),
+        ("Who drew the artwork, The Starry Night?", "van gogh", "A male Dutch artist."),
+        ("What is the biggest organ of the human body?", "skin", "It’s the outermost part of your body and protects everything inside."),
+        ("How many days are there in a year?", "365 days", "Ask the person beside you :)"),
+        ("Which of the princesses ate the poisoned apple?", "snow white", "A princess from Disney.")
+    ]
+
+    if st.session_state.fish_level['caught'] < st.session_state.fish_level['target']:
+        q, a, hint = fish_q[st.session_state.fish_level['index']]
+        st.markdown(f"**Q:** {q}")
+        user_ans = st.text_input("Your answer:", key='fish_q')
+        if user_ans:
+            if user_ans.strip().lower() == a:
+                st.session_state.fish_level['caught'] += 1
+                st.success(f"✅ You caught a fish! Total fish: {st.session_state.fish_level['caught']}/{st.session_state.fish_level['target']}")
+                st.session_state.fish_level['index'] += 1
+                st.session_state.fish_level['attempt'] = 0
+            else:
+                st.session_state.fish_level['attempt'] += 1
+                st.warning("❌ Incorrect.")
+                if st.session_state.fish_level['attempt'] == 2 and st.session_state.fish_level['fail_count'] > 2:
+                    if st.button("Recharge with mocktail?"):
+                        st.info(f"🔋 Hint: {hint}")
+                if st.session_state.fish_level['attempt'] >= 5:
+                    st.session_state.fish_level['index'] += 1
+                    st.session_state.fish_level['attempt'] = 0
+                    st.error("😓 Failed this question. Moving on.")
+                st.session_state.fish_level['fail_count'] += 1
+
+    if st.session_state.fish_level['caught'] >= st.session_state.fish_level['target']:
+        st.balloons()
+        st.success("🎉 Congratulation! Dora caught all the fish she wanted!")
+        st.session_state.finished = True
+
+elif choice == "Desert" and not st.session_state.finished:
+    st.header("🏜️ Desert Journey")
+
+    st.subheader("🎶 Level 1: Fix the Lyrics")
+    st.markdown("Boots messed up the lyrics. Help him!")
+    st.write("Row, row, row your **butt**")
+    st.write("Life is but a **fein**")
+
+    wrong = st.text_input("Type the wrong words (comma-separated)", key="desert1")
+    if wrong:
+        if set(w.strip().lower() for w in wrong.split(",")) == {"butt", "fein"}:
+            st.success("🎉 Correct! Boots will follow you for the rest of the journey!")
+
+            st.subheader("🐂 Level 2: Cheer Up Benny")
+            idea = st.text_input("What can we do to help Benny feel better?")
+            if idea:
+                if idea.strip().lower() in ["sing", "sing a song"]:
+                    st.balloons()
+                    st.success("🎉 You did it! Benny is smiling now.")
+                    st.session_state.finished = True
                 else:
-                    st.markdown("💪 Keep trying!")
+                    st.warning("❌ Hmm... try something else.")
+                    if st.button("Need a hint?"):
+                        st.info("💡 Hint: Use the song from earlier!")
+        else:
+            st.warning("❌ Not quite. Try again!")
 
-            if st.session_state.attempts >= 5:
-                st.warning("😓 You failed to answer this question within 5 tries.")
-                st.session_state.q_index += 1
-                st.session_state.attempts = 0
-                st.session_state.mocktail_offered = False
+elif choice == "Forest" and not st.session_state.finished:
+    st.header("🌲 Forest Animal Sound Game")
 
-# 🎉 Game End (Success / Fail)
-elif st.session_state.q_index >= len(questions):
-    if st.session_state.caught_fish >= st.session_state.target_fish:
-        st.success("🎉 Hooray, YOU DID IT! Dora caught all the fish she wanted!")
-    else:
-        st.error("😢 Oh no! Dora didn't catch enough fish. Better luck next time!")
+    sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
+    animals = ["pig", "bee", "cow", "cat", "chicken"]
+    score = 0
 
-    if st.button("🔁 Restart Game"):
-        for key in list(st.session_state.keys()):
+    for i in range(len(sounds)):
+        user = st.text_input(f"What animal makes the sound '{sounds[i]}'?", key=f"sound_{i}")
+        if user:
+            if user.lower() == animals[i]:
+                st.success("✅ Correct!")
+                score += 1
+            else:
+                st.error(f"❌ Oops! It's '{animals[i]}'")
+
+    if st.button("Finish Forest Game"):
+        st.balloons()
+        st.success(f"🎉 Congratulation! You got {score}/{len(sounds)} correct.")
+        st.session_state.finished = True
+
+# Reset button
+if st.session_state.finished:
+    if st.button("🔄 Restart Adventure"):
+        for key in st.session_state.keys():
             del st.session_state[key]
         st.rerun()
-
 
 
 
