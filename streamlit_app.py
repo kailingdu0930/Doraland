@@ -1,9 +1,10 @@
 import streamlit as st
+import random
 
 st.set_page_config(page_title="Dora Adventure")
 st.title("🗺️ Dora's Adventure Game")
 
-# 初始化進度
+# ----------- Session State Setup -----------
 if "progress" not in st.session_state:
     st.session_state.progress = {
         "Beach_L1": False,
@@ -13,125 +14,147 @@ if "progress" not in st.session_state:
         "Forest": False
     }
 
-# 設定冒險模式選單（固定三個選項）
-available_choices = ["Beach", "Desert", "Forest"]
+if "show_beach_l2" not in st.session_state:
+    st.session_state.show_beach_l2 = False
+if "show_desert_l2" not in st.session_state:
+    st.session_state.show_desert_l2 = False
 
-# 記錄目前選擇的冒險模式
-if "choice" not in st.session_state:
-    st.session_state.choice = "Beach"
+# ----------- Adventure Select Menu -----------
+if st.session_state.progress["Beach_L2"] and st.session_state.progress["Desert_L2"] and st.session_state.progress["Forest"]:
+    st.success("🎉 Hooray, YOU DID IT!")
+    if st.button("🔄 Restart Adventure"):
+        st.session_state.clear()
+        st.experimental_rerun()
+    st.stop()
 
-choice = st.selectbox("Where should Dora go?", available_choices, index=available_choices.index(st.session_state.choice))
-st.session_state.choice = choice
+st.markdown("### Choose your adventure mode:")
+available_choices = ["", "Beach"]
+if st.session_state.progress["Beach_L2"]:
+    available_choices.append("Desert")
+if st.session_state.progress["Desert_L2"]:
+    available_choices.append("Forest")
 
-# --- Beach Adventure ---
+choice = st.selectbox("Where should Dora go?", available_choices)
+
+# ----------- Beach Adventure -----------
 if choice == "Beach":
     st.header("🏖️ Beach Adventure")
 
-    # Level 1
+    # ---- Beach Level 1 ----
     if not st.session_state.progress["Beach_L1"]:
         st.subheader("🌊 Level 1: Help Diego Make a Mocktail")
-        st.write("Diego is struggling to avoid alcoholic ingredients. Help him!")
-
         st.write("Choose the ingredients that should **NOT** be included in a mocktail:")
         st.info("Hint: There are 3 alcoholic ingredients to pick.")
         ingredients = ["Sprite", "Lemon", "Ginger", "Beer", "Passion fruit", "Whisky", "Mint leaf", "Tequila"]
         selected = st.multiselect("Select alcoholic ingredients:", ingredients)
+        correct_set = {"Beer", "Whisky", "Tequila"}
 
-        correct_mocktail = {"Beer", "Whisky", "Tequila"}
-        user_set = set(selected)
-
-        if user_set:
-            if user_set == correct_mocktail:
+        if selected:
+            user_set = set(selected)
+            if user_set == correct_set:
                 st.success("Diego: Thank you Dora! Here's your mocktail! 🍹")
                 st.balloons()
                 st.session_state.progress["Beach_L1"] = True
-                if st.button("➡️ Proceed to Beach Level 2"):
-                    st.rerun()
+                st.session_state.show_beach_l2 = True
+                st.experimental_rerun()
+            elif len(selected) < 3:
+                st.warning("Almost there! There are more alcoholic ingredients to find!")
             else:
                 st.error("Oops! Mocktails shouldn't include alcohol. Try again!")
 
-    # Level 2
-    elif not st.session_state.progress["Beach_L2"]:
+    # ---- Beach Level 2 ----
+    elif st.session_state.show_beach_l2 and not st.session_state.progress["Beach_L2"]:
         st.subheader("🐟 Level 2: Catching Fish")
-        st.write(f"Dora wants to catch **5** fish! Answer questions correctly to help her.")
+        if "fish_data" not in st.session_state:
+            fish_goal = random.randint(1, 5)
+            st.session_state.fish_data = {
+                "goal": fish_goal,
+                "caught": 0,
+                "q_index": 0,
+                "attempts": 0,
+                "failed": 0,
+                "hint_ready": False
+            }
 
-        questions = [
-            ("Which month has twenty-eight days?", "every month", "A month with twenty-eight days doesn’t mean 'only' with twenty-eight days."),
+        q_data = [
+            ("Which month has twenty-eight days?", "every month", "A month with twenty-eight days doesn’t mean \"only\" with twenty-eight days."),
             ("Who drew the artwork, The Starry Night?", "van gogh", "A male Dutch artist."),
             ("What is the biggest organ of the human body?", "skin", "It’s the outermost part of your body and protects everything inside."),
             ("How many days are there in a year?", "365", "Ask the person beside you :)"),
             ("Which of the princesses ate the poisoned apple?", "snow white", "A princess from Disney.")
         ]
 
-        # 初始化 fish 問題狀態
-        if "fish_data" not in st.session_state:
-            st.session_state.fish_data = {"caught": 0, "q_index": 0, "attempts": 0, "failed": 0}
-
-        q_index = st.session_state.fish_data["q_index"]
-        caught = st.session_state.fish_data["caught"]
-
-        if caught < 5 and q_index < len(questions):
-            question, correct, hint = questions[q_index]
+        data = st.session_state.fish_data
+        if data["caught"] < data["goal"] and data["q_index"] < len(q_data):
+            question, answer, hint = q_data[data["q_index"]]
+            st.write(f"Dora wants **{data['goal']}** fish. You've caught: {data['caught']}")
             st.write(f"Q: {question}")
-            answer = st.text_input("Your answer:", key=f"fish_{q_index}").strip().lower()
-            if answer:
-                if answer == correct:
-                    st.success("Correct! You caught a fish!")
-                    st.session_state.fish_data["caught"] += 1
-                    st.session_state.fish_data["q_index"] += 1
-                    st.rerun()
+            user_answer = st.text_input("Your answer:", key=f"fish_{data['q_index']}").strip().lower()
+
+            if user_answer:
+                data["attempts"] += 1
+                if user_answer == answer:
+                    data["caught"] += 1
+                    data["q_index"] += 1
+                    data["attempts"] = 0
+                    data["hint_ready"] = False
+                    st.success("🎣 You caught a fish!")
+                    st.experimental_rerun()
                 else:
-                    st.error("Incorrect, try again!")
-        else:
-            st.success("🎉 Congrats! You caught all the fish!")
+                    st.warning("❌ Incorrect.")
+                    if data["attempts"] == 2:
+                        data["hint_ready"] = True
+                    if data["attempts"] >= 5:
+                        st.error("😓 You failed this question.")
+                        data["q_index"] += 1
+                        data["attempts"] = 0
+                        data["failed"] += 1
+                        data["hint_ready"] = False
+                        st.experimental_rerun()
+
+            if data["hint_ready"]:
+                use_hint = st.radio("It looks like you're exhausted. Want to recharge with the mocktail?", ["Yes", "No"], key=f"hint_{data['q_index']}")
+                if use_hint == "Yes":
+                    st.info(f"Hint: {hint}")
+
+        elif data["caught"] >= data["goal"]:
+            st.success("🎉 Hooray, YOU DID IT!")
             st.balloons()
             st.session_state.progress["Beach_L2"] = True
-            if st.button("➡️ Go to Desert Adventure"):
-                st.rerun()
+            st.experimental_rerun()
 
-# --- Desert Adventure ---
+# ----------- Desert Adventure -----------
 elif choice == "Desert":
     st.header("🏜️ Desert Adventure")
 
+    # ---- Desert Level 1 ----
     if not st.session_state.progress["Desert_L1"]:
         st.subheader("🎵 Level 1: Fix Boots' Song")
-        st.write("Boots sang the wrong lyrics. Can you spot the wrong words?")
-        st.info("Hint: There are 2 incorrect words in the lyrics.")
-        st.write("Row, row, row your butt")
-        st.write("Gently down the stream")
-        st.write("Merrily, merrily, merrily, merrily")
-        st.write("Life is but a fein")
-
+        st.write("Row, row, row your butt\nGently down the stream\nMerrily, merrily, merrily, merrily\nLife is but a fein")
         desert_input = st.multiselect("Select the wrong words:", ["butt", "fein", "stream", "dream"])
         if set(desert_input) == {"butt", "fein"}:
-            st.success("Thank you Dora! Now Boots will help you on your journey!")
+            st.success("Boots: Thank you Dora! I'll sing it right next time!")
             st.balloons()
             st.session_state.progress["Desert_L1"] = True
-            if st.button("➡️ Proceed to Desert Level 2"):
-                st.rerun()
+            st.session_state.show_desert_l2 = True
+            st.experimental_rerun()
         elif desert_input:
-            st.error("Not quite right. Try again!")
+            st.error("Hmm... try again!")
 
-    elif not st.session_state.progress["Desert_L2"]:
+    # ---- Desert Level 2 ----
+    elif st.session_state.show_desert_l2 and not st.session_state.progress["Desert_L2"]:
         st.subheader("🐂 Level 2: Help Benny")
-        st.write("What can we do to help Benny feel better?")
-
-        desert2_input = st.text_input("Your suggestion:", key="desert2").strip().lower()
-        correct_set = {"sing", "sing a song"}
+        desert2_input = st.text_input("What can we do to help Benny feel better?", key="desert2").strip().lower()
         if desert2_input:
-            if desert2_input in correct_set:
-                st.success("Boots: What a good suggestion! Let's sing! 🎵")
+            if desert2_input in {"sing", "sing a song"}:
+                st.success("Boots: What a great idea! Let's sing together 🎵")
                 st.balloons()
                 st.session_state.progress["Desert_L2"] = True
-                if st.button("➡️ Go to Forest Adventure"):
-                    st.rerun()
+                st.experimental_rerun()
             else:
-                if st.session_state.get("desert2_fail", 0) >= 2:
-                    st.info("Hint: Use the knowledge from level 1.")
-                st.session_state["desert2_fail"] = st.session_state.get("desert2_fail", 0) + 1
                 st.error("Hmm… Try something else!")
 
-# --- Forest Adventure ---
+# ----------- Forest Adventure -----------
 elif choice == "Forest":
     st.header("🌲 Forest Adventure")
     st.subheader("🗺️ Animal Sound Match")
@@ -139,30 +162,31 @@ elif choice == "Forest":
 
     sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
     animals = ["pig", "bee", "cow", "cat", "rooster"]
+    options = ["pig", "bee", "cow", "cat", "rooster", "dog", "sheep", "duck"]
 
-    if "forest_score" not in st.session_state:
-        st.session_state.forest_score = 0
+    if "forest_index" not in st.session_state:
         st.session_state.forest_index = 0
+        st.session_state.forest_score = 0
 
     idx = st.session_state.forest_index
     if idx < len(sounds):
-        answer = st.text_input(f"What animal makes this sound '{sounds[idx]}'?", key=f"forest_{idx}").strip().lower()
-        if answer:
-            if answer == animals[idx]:
+        choice = st.radio(f"What animal makes this sound: '{sounds[idx]}'", options, key=f"forest_q_{idx}")
+        if st.button("Submit", key=f"submit_forest_{idx}"):
+            if choice == animals[idx]:
                 st.success("Correct!")
                 st.session_state.forest_score += 1
             else:
                 st.error(f"Wrong. It was '{animals[idx]}'")
             st.session_state.forest_index += 1
-            st.rerun()
+            st.experimental_rerun()
     else:
-        score = st.session_state.forest_score
-        st.success(f"🎉 Congrats! You got {score}/{len(sounds)} correct!")
+        st.success(f"🎉 You got {st.session_state.forest_score}/{len(sounds)} correct!")
         st.balloons()
+        st.session_state.progress["Forest"] = True
+        st.experimental_rerun()
 
-# 重新開始按鈕
+# ----------- Restart Button -----------
 if st.button("🔄 Restart Adventure"):
     st.session_state.clear()
-    st.rerun()
-
+    st.experimental_rerun()
 
