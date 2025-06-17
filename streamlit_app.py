@@ -78,7 +78,7 @@ elif st.session_state.q_index >= len(questions):
     if st.button("🔁 Restart Game"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.experimental_rerun()
+        st.rerun()
 
 
 
