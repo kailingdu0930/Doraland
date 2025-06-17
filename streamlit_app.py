@@ -135,7 +135,7 @@ elif choice == "Forest":
     st.write("Help Map match animals to their sounds.")
 
     sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
-    animals = ["pig", "bee", "cow", "cat", "chicken"]
+    animals = ["pig", "bee", "cow", "cat", "rooster"]
 
     if "forest_score" not in st.session_state:
         st.session_state.forest_score = 0
@@ -159,3 +159,4 @@ elif choice == "Forest":
 # Restart button
 if st.button("🔄 Restart Adventure"):
     st.session_state.clear()
+
