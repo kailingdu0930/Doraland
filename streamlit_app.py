@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Dora Adventure")
 st.title("🗺️ Dora's Adventure Game")
 
-# 初始化遊戲進度與顯示狀態
+# 初始化進度
 if "progress" not in st.session_state:
     st.session_state.progress = {
         "Beach_L1": False,
@@ -12,30 +12,26 @@ if "progress" not in st.session_state:
         "Desert_L2": False,
         "Forest": False
     }
-if "show_beach_l2" not in st.session_state:
-    st.session_state.show_beach_l2 = False
-if "show_desert_l2" not in st.session_state:
-    st.session_state.show_desert_l2 = False
 
-st.markdown("### Choose your adventure mode:")
+# 設定冒險模式選單（固定三個選項）
+available_choices = ["Beach", "Desert", "Forest"]
 
-# 依進度開放選項
-available_choices = ["", "Beach"]
-if st.session_state.progress["Beach_L2"]:
-    available_choices.append("Desert")
-if st.session_state.progress["Desert_L2"]:
-    available_choices.append("Forest")
+# 記錄目前選擇的冒險模式
+if "choice" not in st.session_state:
+    st.session_state.choice = "Beach"
 
-choice = st.selectbox("Where should Dora go?", available_choices)
+choice = st.selectbox("Where should Dora go?", available_choices, index=available_choices.index(st.session_state.choice))
+st.session_state.choice = choice
 
-# --------- Beach Adventure ---------
+# --- Beach Adventure ---
 if choice == "Beach":
     st.header("🏖️ Beach Adventure")
 
-    # Level 1: Mocktail 問題
+    # Level 1
     if not st.session_state.progress["Beach_L1"]:
         st.subheader("🌊 Level 1: Help Diego Make a Mocktail")
         st.write("Diego is struggling to avoid alcoholic ingredients. Help him!")
+
         st.write("Choose the ingredients that should **NOT** be included in a mocktail:")
         st.info("Hint: There are 3 alcoholic ingredients to pick.")
         ingredients = ["Sprite", "Lemon", "Ginger", "Beer", "Passion fruit", "Whisky", "Mint leaf", "Tequila"]
@@ -49,14 +45,13 @@ if choice == "Beach":
                 st.success("Diego: Thank you Dora! Here's your mocktail! 🍹")
                 st.balloons()
                 st.session_state.progress["Beach_L1"] = True
-                if st.button("➡️ Proceed to Level 2: Catching Fish"):
-                    st.session_state.show_beach_l2 = True
+                if st.button("➡️ Proceed to Beach Level 2"):
                     st.rerun()
             else:
                 st.error("Oops! Mocktails shouldn't include alcohol. Try again!")
 
-    # Level 2: Catching Fish 問題
-    elif st.session_state.show_beach_l2 and not st.session_state.progress["Beach_L2"]:
+    # Level 2
+    elif not st.session_state.progress["Beach_L2"]:
         st.subheader("🐟 Level 2: Catching Fish")
         st.write(f"Dora wants to catch **5** fish! Answer questions correctly to help her.")
 
@@ -68,6 +63,7 @@ if choice == "Beach":
             ("Which of the princesses ate the poisoned apple?", "snow white", "A princess from Disney.")
         ]
 
+        # 初始化 fish 問題狀態
         if "fish_data" not in st.session_state:
             st.session_state.fish_data = {"caught": 0, "q_index": 0, "attempts": 0, "failed": 0}
 
@@ -77,30 +73,26 @@ if choice == "Beach":
         if caught < 5 and q_index < len(questions):
             question, correct, hint = questions[q_index]
             st.write(f"Q: {question}")
-            answer = st.text_input("Your answer:", key=f"fish_{q_index}", value=st.session_state.get(f"fish_answer_{q_index}", ""))
+            answer = st.text_input("Your answer:", key=f"fish_{q_index}").strip().lower()
             if answer:
-                if answer.strip().lower() == correct:
+                if answer == correct:
+                    st.success("Correct! You caught a fish!")
                     st.session_state.fish_data["caught"] += 1
                     st.session_state.fish_data["q_index"] += 1
-                    st.session_state[f"fish_answer_{q_index}"] = ""  # 清空輸入欄
-                    st.success(f"You caught a fish! Total: {st.session_state.fish_data['caught']}/5")
                     st.rerun()
                 else:
-                    st.session_state[f"fish_answer_{q_index}"] = answer
-                    st.warning("❌ Incorrect. Try again!")
+                    st.error("Incorrect, try again!")
         else:
-            st.success("🎉 Congratulations! Dora caught all the fish she wanted!")
+            st.success("🎉 Congrats! You caught all the fish!")
             st.balloons()
             st.session_state.progress["Beach_L2"] = True
             if st.button("➡️ Go to Desert Adventure"):
-                st.session_state.show_desert_l2 = False  # 重置下一關狀態
                 st.rerun()
 
-# --------- Desert Adventure ---------
+# --- Desert Adventure ---
 elif choice == "Desert":
     st.header("🏜️ Desert Adventure")
 
-    # Level 1: 歌詞錯誤挑選
     if not st.session_state.progress["Desert_L1"]:
         st.subheader("🎵 Level 1: Fix Boots' Song")
         st.write("Boots sang the wrong lyrics. Can you spot the wrong words?")
@@ -111,19 +103,16 @@ elif choice == "Desert":
         st.write("Life is but a fein")
 
         desert_input = st.multiselect("Select the wrong words:", ["butt", "fein", "stream", "dream"])
-        if desert_input:
-            if set(desert_input) == {"butt", "fein"}:
-                st.success("Thank you Dora! Now Boots will help you on your journey!")
-                st.balloons()
-                st.session_state.progress["Desert_L1"] = True
-                if st.button("➡️ Proceed to Level 2: Help Benny"):
-                    st.session_state.show_desert_l2 = True
-                    st.experimental_rerun()
-            else:
-                st.error("Not quite right. Try again!")
+        if set(desert_input) == {"butt", "fein"}:
+            st.success("Thank you Dora! Now Boots will help you on your journey!")
+            st.balloons()
+            st.session_state.progress["Desert_L1"] = True
+            if st.button("➡️ Proceed to Desert Level 2"):
+                st.rerun()
+        elif desert_input:
+            st.error("Not quite right. Try again!")
 
-    # Level 2: 幫助 Benny
-    elif st.session_state.show_desert_l2 and not st.session_state.progress["Desert_L2"]:
+    elif not st.session_state.progress["Desert_L2"]:
         st.subheader("🐂 Level 2: Help Benny")
         st.write("What can we do to help Benny feel better?")
 
@@ -142,7 +131,7 @@ elif choice == "Desert":
                 st.session_state["desert2_fail"] = st.session_state.get("desert2_fail", 0) + 1
                 st.error("Hmm… Try something else!")
 
-# --------- Forest Adventure ---------
+# --- Forest Adventure ---
 elif choice == "Forest":
     st.header("🌲 Forest Adventure")
     st.subheader("🗺️ Animal Sound Match")
@@ -168,11 +157,12 @@ elif choice == "Forest":
             st.rerun()
     else:
         score = st.session_state.forest_score
-        st.success(f"🎉 Congratulations! You got {score}/{len(sounds)} correct!")
+        st.success(f"🎉 Congrats! You got {score}/{len(sounds)} correct!")
         st.balloons()
 
-# 重啟按鈕
+# 重新開始按鈕
 if st.button("🔄 Restart Adventure"):
     st.session_state.clear()
     st.rerun()
+
 
