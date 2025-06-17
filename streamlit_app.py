@@ -4,7 +4,7 @@ import random
 st.set_page_config(page_title="Dora Adventure")
 st.title("🗺️ Dora's Adventure Game")
 
-# 初始化進度
+# Initialize progress
 if "progress" not in st.session_state:
     st.session_state.progress = {
         "Beach_L1": False,
@@ -21,11 +21,12 @@ if "show_desert_l2" not in st.session_state:
 
 # Helper function for congrats and balloons
 def finish_path(path_key):
-    st.success("🎉 Congratulations! You completed this part!")
+    st.success(f"🎉 Congratulations! You finished the {path_key.replace('_', ' ')} path!")
     st.balloons()
     st.session_state.progress[path_key] = True
+    st.rerun()
 
-# 選擇冒險路徑
+# Choose adventure path
 available_paths = []
 if not st.session_state.progress["Beach_L1"] or (st.session_state.progress["Beach_L1"] and not st.session_state.progress["Beach_L2"]):
     available_paths.append("Beach")
@@ -105,21 +106,24 @@ if choice == "Beach":
                     st.session_state.fish_attempts = 0
                     st.session_state.show_hint = False
                     st.session_state.hint_choice = None
-                    st.rerun()
+                    if st.session_state.fish_caught < st.session_state.fish_goal:
+                        st.rerun()
+                    else:
+                        st.success("Hooray, YOU DID IT!")
+                        finish_path("Beach_L2")
                 else:
                     st.session_state.fish_attempts += 1
                     st.warning("Oops, that's not right. Try again!")
-                    if st.session_state.fish_attempts == 2:
-                        # 問是否要喝mocktail補能量
-                        if st.session_state.hint_choice is None:
-                            choice_hint = st.radio("You look tired. Recharge with a mocktail for a hint?", ["No", "Yes"], key=f"hint_choice_{q_idx}")
-                            st.session_state.hint_choice = choice_hint
-                            if choice_hint == "Yes":
-                                st.info(f"Hint: {hint}")
-                        else:
-                            # 如果已經選Yes顯示hint
-                            if st.session_state.hint_choice == "Yes":
-                                st.info(f"Hint: {hint}")
+                    if st.session_state.fish_attempts >= 2 and st.session_state.hint_choice is None:
+                        st.session_state.hint_choice = st.radio(
+                            "It looks like you are exhausted. Would you like to recharge your energy with the mocktail?",
+                            ["No", "Yes"],
+                            key=f"hint_choice_{q_idx}"
+                        )
+                        if st.session_state.hint_choice == "Yes":
+                            st.session_state.show_hint = True
+                    if st.session_state.show_hint and st.session_state.hint_choice == "Yes":
+                        st.info(f"Hint: {hint}")
                     if st.session_state.fish_attempts >= 5:
                         st.error("You've failed this question, moving on.")
                         st.session_state.fish_q_index += 1
@@ -127,7 +131,8 @@ if choice == "Beach":
                         st.session_state.show_hint = False
                         st.session_state.hint_choice = None
                         st.rerun()
-        else:
+        elif caught >= st.session_state.fish_goal:
+            st.success("Hooray, YOU DID IT!")
             finish_path("Beach_L2")
 
 # ---------------- Desert Adventure ----------------
@@ -164,9 +169,7 @@ elif choice == "Desert":
         if choice2:
             if choice2 == "sing":
                 st.success("Well done! Boots: What a good suggestion! Let's sing! 🎵")
-                st.balloons()
-                st.session_state.progress["Desert_L2"] = True
-                st.rerun()
+                finish_path("Desert_L2")
             else:
                 st.session_state["desert2_fail"] = st.session_state.get("desert2_fail", 0) + 1
                 if st.session_state["desert2_fail"] >= 2:
@@ -190,8 +193,10 @@ elif choice == "Forest":
     idx = st.session_state.forest_index
 
     if idx < len(sounds):
-        # 亂序選項，但要保證包含正確答案
-        options = animals.copy()
+        # Create options ensuring the correct answer is included
+        correct_animal = animals[idx]
+        other_animals = [a for a in animals if a != correct_animal]
+        options = random.sample(other_animals, min(3, len(other_animals))) + [correct_animal]
         random.shuffle(options)
 
         selected = st.selectbox(f"What animal makes this sound '{sounds[idx]}'?", options, key=f"forest_{idx}")
