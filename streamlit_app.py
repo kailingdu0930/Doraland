@@ -59,7 +59,7 @@ if choice == "Beach":
             ("Which month has twenty-eight days?", "every month", "A month with twenty-eight days doesn’t mean 'only' with twenty-eight days."),
             ("Who drew the artwork, The Starry Night?", "van gogh", "A male Dutch artist."),
             ("What is the biggest organ of the human body?", "skin", "It’s the outermost part of your body and protects everything inside."),
-            ("How many days are there in a year?", "365 days", "Ask the person beside you :)"),
+            ("How many days are there in a year?", "365", "Ask the person beside you :)"),
             ("Which of the princesses ate the poisoned apple?", "snow white", "A princess from Disney.")
         ]
 
