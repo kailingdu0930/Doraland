@@ -41,7 +41,7 @@ if all(st.session_state.progress.values()):
     st.success("🎉 Congratulations! You completed all challenges!")
     if st.button("🔄 Restart Adventure"):
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
 else:
     # Show available levels
     choices = []
@@ -78,7 +78,7 @@ else:
                     st.balloons()
                     st.session_state.progress["Beach_L1"] = True
                     st.session_state.show_beach_l2 = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Oops! Mocktails shouldn't contain alcohol. Try again!")
 
@@ -122,7 +122,7 @@ else:
                             "q_index": q_index + 1,
                             "attempts": 0
                         })
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("❌ Incorrect.")
                         if fd["attempts"] == 2 and q_index not in fd["hint_choice"]:
@@ -141,7 +141,7 @@ else:
                                 "attempts": 0,
                                 "failed": fd["failed"] + 1
                             })
-                            st.experimental_rerun()
+                            st.rerun()
 
     # ---------- Desert Adventure ----------
     elif choice == "Desert":
@@ -163,7 +163,7 @@ else:
                 st.balloons()
                 st.session_state.progress["Desert_L1"] = True
                 st.session_state.show_desert_l2 = True
-                st.experimental_rerun()
+                st.rerun()
             elif desert_input:
                 st.error("Not quite right. Try again!")
 
@@ -178,7 +178,7 @@ else:
                     st.success("Boots: Great idea! Let's sing! 🎵")
                     st.balloons()
                     st.session_state.progress["Desert_L2"] = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     if st.session_state.desert2_fail >= 2:
                         st.info("Hint: Remember level 1 knowledge.")
@@ -211,4 +211,4 @@ else:
                 else:
                     st.error(f"❌ Wrong. The correct answer was '{animals[idx]}'")
                 st.session_state.forest_index += 1
-                st.experimental_rerun()
+                st.rerun()
