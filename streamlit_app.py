@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 
 st.set_page_config(page_title="Dora Adventure")
 st.title("🗺️ Dora's Adventure Game")
@@ -31,7 +32,6 @@ if choice == "Beach":
     # Level 1
     if not st.session_state.progress["Beach_L1"]:
         st.subheader("🌊 Level 1: Help Diego Make a Mocktail")
-        st.write("Choose the ingredients that should **NOT** be included in a mocktail:")
         st.info("Hint: There are 3 alcoholic ingredients to pick.")
         ingredients = ["Sprite", "Lemon", "Ginger", "Beer", "Passion fruit", "Whisky", "Mint leaf", "Tequila"]
         selected = st.multiselect("Select alcoholic ingredients:", ingredients)
@@ -71,6 +71,7 @@ if choice == "Beach":
                 "q_index": 0,
                 "attempts": 0,
                 "hint_choice": None,
+                "just_correct": False
             }
 
         fd = st.session_state.fish_data
@@ -82,20 +83,26 @@ if choice == "Beach":
             answer = st.text_input("Your answer:", key=f"fish_{q_index}").strip().lower()
 
             if answer:
+                if fd["just_correct"]:
+                    # Wait a moment to show success message before continuing
+                    time.sleep(1)
+                    fd["just_correct"] = False
+                    st.rerun()
                 fd["attempts"] += 1
                 if answer == correct:
-                    st.success("Great! You caught a fish! 🐟")
+                    st.success("Well done! You caught a fish! 🐟")
                     fd["caught"] += 1
                     fd["q_index"] += 1
                     fd["attempts"] = 0
                     fd["hint_choice"] = None
-                    st.rerun()
+                    fd["just_correct"] = True
+                    st.experimental_rerun()
                 else:
                     st.warning("Oops, that's not it.")
                     if fd["attempts"] >= 2:
                         if fd["hint_choice"] is None:
                             want_hint = st.radio(
-                                "You look tired. Want a mocktail and a hint?",
+                                "You're getting tired. Want a mocktail and a hint?",
                                 ["No", "Yes"], key=f"hint_{q_index}"
                             )
                             if want_hint == "Yes":
@@ -107,7 +114,7 @@ if choice == "Beach":
                         if fd["hint_choice"] == "Yes":
                             st.info(f"Hint: {hint}")
                     if fd["attempts"] >= 5:
-                        st.error("Too many tries! Moving to the next question.")
+                        st.error("Too many tries! Moving on.")
                         fd["q_index"] += 1
                         fd["attempts"] = 0
                         fd["hint_choice"] = None
@@ -181,15 +188,18 @@ elif choice == "Forest":
     if idx < len(sounds):
         options = animals.copy()
         random.shuffle(options)
-        answer = st.selectbox(f"What animal makes the sound '{sounds[idx]}'?", options, key=f"forest_{idx}")
-        if st.button("Submit Answer", key=f"submit_{idx}"):
-            if answer == animals[idx]:
-                st.success("Correct!")
-                st.session_state.forest_score += 1
-            else:
-                st.error(f"Wrong. It's '{animals[idx]}'.")
-            st.session_state.forest_index += 1
-            st.rerun()
+
+        with st.form(f"form_{idx}"):
+            answer = st.radio(f"What animal makes the sound '{sounds[idx]}'?", options, key=f"forest_radio_{idx}")
+            submitted = st.form_submit_button("Submit Answer")
+            if submitted:
+                if answer == animals[idx]:
+                    st.success("Correct!")
+                    st.session_state.forest_score += 1
+                else:
+                    st.error(f"Wrong. It's '{animals[idx]}'.")
+                st.session_state.forest_index += 1
+                st.rerun()
     else:
         score = st.session_state.forest_score
         st.success(f"🎉 You got {score}/{len(sounds)} right!")
