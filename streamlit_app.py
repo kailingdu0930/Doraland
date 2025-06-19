@@ -172,73 +172,46 @@ elif choice == "Desert":
 
 # ========== FOREST ==========
 
-elif choice == "Forest":
+if choice == "Forest":
     st.header("🌲 Forest Adventure")
     st.subheader("🗺️ Animal Sound Match")
 
     sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
     animals = ["pig", "bee", "cow", "cat", "rooster"]
 
-    # Initialize session state
-    if "forest_score" not in st.session_state:
+    # Reset forest_score if new game or first time here
+    if "forest_score" not in st.session_state or (choice == "Forest" and st.session_state.get("forest_index", 0) == 0):
         st.session_state.forest_score = 0
-    if "forest_index" not in st.session_state:
         st.session_state.forest_index = 0
-    if "shuffled_options" not in st.session_state:
-        st.session_state.shuffled_options = [animals.copy() for _ in range(len(sounds))]
-        for opt in st.session_state.shuffled_options:
-            random.shuffle(opt)
-    if "submitted" not in st.session_state:
-        st.session_state.submitted = False
 
     idx = st.session_state.forest_index
 
     if idx < len(sounds):
-        # Use pre-shuffled options from session state
-        options = st.session_state.shuffled_options[idx]
+        options = animals.copy()
+        random.shuffle(options)
 
         with st.form(f"form_{idx}"):
-            answer = st.radio(
-                f"What animal makes the sound '{sounds[idx]}'?",
-                options,
-                key=f"forest_radio_{idx}_{random.randint(0, 10000)}",  # Unique key
-            )
+            answer = st.radio(f"What animal makes the sound '{sounds[idx]}'?", options, key=f"forest_radio_{idx}")
             submitted = st.form_submit_button("Submit Answer")
-
             if submitted:
-                st.session_state.submitted = True
                 is_correct = answer == animals[idx]
                 if is_correct:
-                    st.session_state.forest_score += 1
+                    st.session_state.forest_score = st.session_state.get("forest_score", 0) + 1
                     st.success("Correct!")
                 else:
                     st.error(f"Wrong. It's '{animals[idx]}'.")
-                # Delay moving to next question until user clicks "Next"
-                st.session_state.last_answer_correct = is_correct
-
-        # Show "Next" button after submission
-        if st.session_state.submitted:
-            if st.button("Next"):
                 st.session_state.forest_index += 1
-                st.session_state.submitted = False
+                time.sleep(1)  # Let user see feedback
                 st.rerun()
     else:
         score = st.session_state.forest_score
         st.success(f"🎉 You got {score}/{len(sounds)} right!")
+        st.balloons()
         st.session_state.progress["Forest"] = True
-        # Reset for replay
-        if st.button("Play Again"):
-            st.session_state.forest_score = 0
-            st.session_state.forest_index = 0
-            st.session_state.submitted = False
-            st.session_state.shuffled_options = [animals.copy() for _ in range(len(sounds))]
-            for opt in st.session_state.shuffled_options:
-                random.shuffle(opt)
-            st.rerun()
-
 # ========== RESTART ==========
 if all(st.session_state.progress.values()):
     st.markdown("---")
     if st.button("🔄 Restart Adventure"):
         st.session_state.clear()
         st.rerun()
+
