@@ -55,7 +55,6 @@ if choice == "Beach":
     elif st.session_state.show_beach_l2 and not st.session_state.progress["Beach_L2"]:
         st.subheader("🐟 Level 2: Catching Fish")
         fish_goal = 5
-        st.session_state.fish_goal = fish_goal
         st.write(f"Dora wants to catch **{fish_goal}** fish! Answer questions correctly to help her.")
 
         questions = [
@@ -95,10 +94,16 @@ if choice == "Beach":
                     st.warning("Oops, that's not it.")
                     if fd["attempts"] >= 2:
                         if fd["hint_choice"] is None:
-                            fd["hint_choice"] = st.radio(
+                            want_hint = st.radio(
                                 "You look tired. Want a mocktail and a hint?",
                                 ["No", "Yes"], key=f"hint_{q_index}"
                             )
+                            if want_hint == "Yes":
+                                fd["hint_choice"] = "Yes"
+                                st.session_state.fish_data = fd
+                                st.rerun()
+                            else:
+                                fd["hint_choice"] = "No"
                         if fd["hint_choice"] == "Yes":
                             st.info(f"Hint: {hint}")
                     if fd["attempts"] >= 5:
@@ -193,6 +198,7 @@ elif choice == "Forest":
 
 # ========== RESTART ==========
 if all(st.session_state.progress.values()):
+    st.markdown("---")
     if st.button("🔄 Restart Adventure"):
         st.session_state.clear()
         st.rerun()
