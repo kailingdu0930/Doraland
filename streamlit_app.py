@@ -84,8 +84,7 @@ if choice == "Beach":
 
             if answer:
                 if fd["just_correct"]:
-                    # Wait a moment to show success message before continuing
-                    time.sleep(1)
+                    time.sleep(1)  # pause to show success message
                     fd["just_correct"] = False
                     st.rerun()
                 fd["attempts"] += 1
@@ -96,7 +95,7 @@ if choice == "Beach":
                     fd["attempts"] = 0
                     fd["hint_choice"] = None
                     fd["just_correct"] = True
-                    st.rerun()
+                    st.experimental_rerun()
                 else:
                     st.warning("Oops, that's not it.")
                     if fd["attempts"] >= 2:
@@ -179,7 +178,8 @@ elif choice == "Forest":
     sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
     animals = ["pig", "bee", "cow", "cat", "rooster"]
 
-    if "forest_score" not in st.session_state:
+    # Reset forest_score if new game or first time here
+    if "forest_score" not in st.session_state or (choice == "Forest" and st.session_state.get("forest_index", 0) == 0):
         st.session_state.forest_score = 0
         st.session_state.forest_index = 0
 
@@ -193,12 +193,14 @@ elif choice == "Forest":
             answer = st.radio(f"What animal makes the sound '{sounds[idx]}'?", options, key=f"forest_radio_{idx}")
             submitted = st.form_submit_button("Submit Answer")
             if submitted:
-                if answer == animals[idx]:
+                is_correct = answer == animals[idx]
+                if is_correct:
+                    st.session_state.forest_score = st.session_state.get("forest_score", 0) + 1
                     st.success("Correct!")
-                    st.session_state.forest_score += 1
                 else:
                     st.error(f"Wrong. It's '{animals[idx]}'.")
                 st.session_state.forest_index += 1
+                time.sleep(1)  # Let user see feedback
                 st.rerun()
     else:
         score = st.session_state.forest_score
@@ -212,4 +214,3 @@ if all(st.session_state.progress.values()):
     if st.button("🔄 Restart Adventure"):
         st.session_state.clear()
         st.rerun()
-
