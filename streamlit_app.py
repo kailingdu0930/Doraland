@@ -171,12 +171,16 @@ elif choice == "Desert":
                     st.info("Hint: Think about what helped in the previous level.")
 
 # ========== FOREST ==========
-elif choice == "Forest":
     st.header("🌲 Forest Adventure")
     st.subheader("🗺️ Animal Sound Match")
 
-    sounds = ["oink", "buzz", "moo", "meow", "cock-a-doodle-doo"]
-    animals = ["pig", "bee", "cow", "cat", "rooster"]
+    qa_pairs = [
+        ("oink", "pig"),
+        ("buzz", "bee"),
+        ("moo", "cow"),
+        ("meow", "cat"),
+        ("cock-a-doodle-doo", "rooster"),
+    ]
 
     # Reset forest_score if new game or first time here
     if "forest_score" not in st.session_state or (choice == "Forest" and st.session_state.get("forest_index", 0) == 0):
@@ -185,29 +189,28 @@ elif choice == "Forest":
 
     idx = st.session_state.forest_index
 
-    if idx < len(sounds):
-        options = animals.copy()
+    if idx < len(qa_pairs):
+        sound, correct_animal = qa_pairs[idx]
+        options = [animal for _, animal in qa_pairs]
         random.shuffle(options)
 
         with st.form(f"form_{idx}"):
-            answer = st.radio(f"What animal makes the sound '{sounds[idx]}'?", options, key=f"forest_radio_{idx}")
+            answer = st.radio(f"What animal makes the sound '{sound}'?", options, key=f"forest_radio_{idx}")
             submitted = st.form_submit_button("Submit Answer")
             if submitted:
-                is_correct = answer == animals[idx]
-                if is_correct:
-                    st.session_state.forest_score = st.session_state.get("forest_score", 0) + 1
+                if answer == correct_animal:
+                    st.session_state.forest_score += 1
                     st.success("Correct!")
                 else:
-                    st.error(f"Wrong. It's '{animals[idx]}'.")
+                    st.error(f"Wrong. It's '{correct_animal}'.")
                 st.session_state.forest_index += 1
-                time.sleep(1)  # Let user see feedback
+                time.sleep(1)
                 st.rerun()
     else:
         score = st.session_state.forest_score
-        st.success(f"🎉 You got {score}/{len(sounds)} right!")
+        st.success(f"🎉 You got {score}/{len(qa_pairs)} right!")
         st.balloons()
         st.session_state.progress["Forest"] = True
-
 # ========== RESTART ==========
 if all(st.session_state.progress.values()):
     st.markdown("---")
