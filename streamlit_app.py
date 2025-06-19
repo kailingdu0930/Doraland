@@ -96,7 +96,7 @@ if choice == "Beach":
                     fd["attempts"] = 0
                     fd["hint_choice"] = None
                     fd["just_correct"] = True
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.warning("Oops, that's not it.")
                     if fd["attempts"] >= 2:
